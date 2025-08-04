@@ -29,10 +29,8 @@ embeddings = OpenAIEmbeddings(
     chunk_size=50,
     retry_min_seconds=10,
 )
-vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
-# vectorstore = PineconeVectorStore(
-#     index_name="langchain-docs-2025", embedding=embeddings
-# )
+# vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+vectorstore = PineconeVectorStore(index_name="langchain-docs-index", embedding=embeddings)
 tavily_extract = TavilyExtract()
 tavily_map = TavilyMap(max_depth=5, max_breadth=20, max_pages=1000)
 tavily_crawl = TavilyCrawl()
@@ -92,13 +90,14 @@ async def main():
         Colors.PURPLE,
     )
     # Crawl the documentation site
-    
+     
     res = tavily_crawl.invoke({
         "url": "https://python.langchain.com/",
-        "max_depth": 2,
-        "extract_depth": "advanced"
+        "max_depth": 1,
+        "extract_depth": "advanced",
+        # "instructions": "content on AI agents", # Filter to focus on AI agents content
     })
-    all_docs = res["results"]
+    all_docs = [Document(page_content=res["raw_content"], metadata={"source": res["url"]}) for res in res["results"]]
 
     # Split documents into chunks
     log_header("DOCUMENT CHUNKING PHASE")
